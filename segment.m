@@ -41,7 +41,7 @@ for i=1:3
 		imwrite(image, ['image' ix jx '-filter4.png']);
 
 		% Now get the average of each cluster
-		computeAverageBlot(image);
+		dlmwrite(['checker' ix jx], computeAverageBlot(image));
 
 		imwrite(image, ['image' ix jx '-processed.png']);
 	end
