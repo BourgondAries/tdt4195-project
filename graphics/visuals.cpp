@@ -18,24 +18,14 @@ namespace ttl {
 void lex(const std::string source,
 	std::vector<std::pair<float, float>> &vector);
 
-#define PI 3.14159265359
-
-#define mouseSpeed 0.00005f
-
-#define cursor_speed 0.0018f
-// units per second
-
-
-// This will be used with shader
-//GLuint VertexArrayID;
-GLuint cubebuffer, cubebuffercolor, circlebuffer, circlebuffer_color;
+GLuint cubebuffer, cubebuffercolor, circlebuffer, circlebuffer_color, arrowbuffer, arrowbuffer_color;
 GLuint programID_1;
+long activeIndex = 0;
 std::vector<std::pair<float, float>> white, red;
 int last_time, current_time;
 GLuint MatrixID; // Handler Matrix for moving the cam
 glm::mat4 MVP, Projection, View, oldView, Model;
 
-// Variables for moving camera with mouse
 int mouse_x = 800/2;
 int mouse_y = 600/2;
 int mouse_button =  GLUT_LEFT_BUTTON;
@@ -43,13 +33,9 @@ int mouse_state = GLUT_UP;
 int sp_key = 0;
 
 float counter = 0;
-// Initial position : on +Z
 glm::vec3 position = glm::vec3(5.63757, 1.7351, -2.19067 );
-// Initial horizontal angle : toward -Z
 float horizontalAngle = -1.07947;
-// Initial vertical angle : none
 float verticalAngle = -0.369055;
-// Initial Field of View
 float initialFoV = 45.0f;
 glm::vec3 direction = glm::vec3(0,0,0) - position;
 glm::vec3 right = glm::vec3(0,0,1) ;
@@ -57,16 +43,14 @@ glm::vec3 up = glm::vec3(0,1,0);
 
 void MouseGL(int button, int state, int x, int y)
 {
-	if (state == GLUT_DOWN) // if key is pressed
-		mouse_state=state;
-		// glutWarpPointer(800/2, 600/2);
+	if (state == GLUT_DOWN)
+		mouse_state = state;
 	else
-		mouse_state=GLUT_UP;
+		mouse_state = GLUT_UP;
 }
 
 void Mouse_active(int x, int y)
 {
-	//save values in global memory
 	mouse_x = x;
 	mouse_y = y;
 }
@@ -75,67 +59,15 @@ void Idle()
 {
 	current_time = glutGet(GLUT_ELAPSED_TIME);
 	int dt = current_time - last_time;
-	if (g_eCurrentScene >=3)
-	{
-		if(mouse_state ==  GLUT_DOWN)
-		{
-			horizontalAngle += mouseSpeed * float(800/2 - mouse_x); // 800 = window width
-			verticalAngle += mouseSpeed * float(600/2 - mouse_y);// 600 = window height
-			// Direction : Spherical coordinates to Cartesian coordinates conversion
-			direction= glm::vec3(
-				cos(verticalAngle) * sin(horizontalAngle),
-				sin(verticalAngle),
-				cos(verticalAngle) * cos(horizontalAngle)
-			);
-			// Right vector
-			right = glm::vec3(
-				sin(horizontalAngle - PI/2.0f),
-				0,
-				cos(horizontalAngle - PI/2.0f)
-			);
-			// Up vector
-			up = glm::cross( right, direction );
-		}
-		//            // Move forward
-		if (sp_key == GLUT_KEY_UP)
-			position += direction * (dt * cursor_speed);
-		// Move backward
-		if (sp_key == GLUT_KEY_DOWN)
-			position -= direction * (dt * cursor_speed);
-		// Strafe right
-		if (sp_key == GLUT_KEY_RIGHT)
-			position += right * (dt * cursor_speed);
-		// Strafe left
-		if (sp_key== GLUT_KEY_LEFT)
-			position -= right * (dt * cursor_speed);
-		sp_key =0;
-		// Camera matrix
-		if (g_eCurrentScene != 6)
-		{
-			View = glm::lookAt(
-				position, // Camera is at position, in World Space
-				position+direction, // and looks here : at the same position, plus "direction"
-				up                  // Head is up (set to 0,-1,0 to look upside-down)
-			);
-		}
-		glutPostRedisplay();
-		// std::cout << position.x << " " << position.y <<  " " << position.z << std::endl;
-	}
-	last_time = current_time; // update when the last timer;
+	last_time = current_time;
 }
 
 void ReshapeGL( int w, int h )
 {
-	std::cout << "ReshapGL( " << w << ", " << h << " );" << std::endl;
-
-	if (h == 0)                                        // Prevent a divide-by-zero error
-	{
-		h = 1;                                      // Making Height Equal One
-	}
+	std::cout << "ReshapGL(" << w << ", " << h << ");" << std::endl;
 	g_iWindowWidth = w;
 	g_iWindowHeight = h;
-	glViewport( 0, 0, 800, 600 );
-
+	glViewport(0, 0, 800, 600);
 }
 
 void Specialkey(int c, int x, int y)
@@ -143,61 +75,48 @@ void Specialkey(int c, int x, int y)
 	sp_key = c;
 }
 
-void KeyboardGL( unsigned char c, int x, int y )
+void KeyboardGL(unsigned char c, int x, int y)
 {
-	// Store the current scene so we can test if it has changed later.
 	unsigned char currentScene = g_eCurrentScene;
+	std::cout << c << std::endl;
 
-	switch ( c )
+	std::pair<float, float> *active;
+	if (activeIndex < white.size()) {
+		active = &white.at(activeIndex);
+	} else {
+		active = &red.at(activeIndex - white.size());
+	}
+
+	switch (c)
 	{
+		case 'h': active->first -= 1; break;
+		case 'j': active->second += 1; break;
+		case 'k': active->second -= 1; break;
+		case 'l': active->first += 1; break;
 		case '1':
-		{
-			glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );                         // Black background
+			glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );  // Black background
 			g_eCurrentScene = 1;
-		}
 		break;
 		case '2':
-		{
-			glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );                         // Black background
+			glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );  // Black background
 			g_eCurrentScene = 2;
-		}
 		break;
-		case '3':
-		{
-			glClearColor( 0.27f, 0.27f, 0.27f, 1.0f );                      // Dark-Gray background
-			g_eCurrentScene = 3;
-		}
-		break;
-		case '4':
-		{
-			glClearColor( 0.4f, 0.4f, 0.4f, 1.0f );                      // Light-Gray background
-			g_eCurrentScene = 4;
-		}
+		case '\t':
+			++activeIndex;
+			if (activeIndex >= white.size() + red.size())
+				activeIndex = 0;
 		break;
 		case 's':
 		case 'S':
 			std::cout << "Shade Model: GL_SMOOTH" << std::endl;
-			// Switch to smooth shading model
-			glShadeModel( GL_SMOOTH );
+			glShadeModel(GL_SMOOTH);
 		break;
 		case 'f':
 		case 'F':
 			std::cout << "Shade Model: GL_FLAT" << std::endl;
-			// Switch to flat shading model
 			glShadeModel( GL_FLAT );
 		break;
-		case '\033': // escape quits
-		case '\015': // Enter quits
-		case 'Q':    // Q quits
-		case 'q':    // q (or escape) quits
-			Cleanup(0);
-		break;
-
-		case '\72': //arrow up
-		{
-
-		}
-		break;
+		case '\033': case '\015': case 'Q': case 'q': Cleanup(0); break;
 	}
 
 	if (currentScene != g_eCurrentScene)
@@ -216,15 +135,14 @@ void Cleanup( int errorCode, bool bExit )
 	}
 
 	if (bExit)
-		exit(errorCode);
+		std::exit(errorCode);
 }
 
 
 void DisplayGL()
 {
 	std::this_thread::sleep_for(std::chrono::milliseconds(33));
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Clean up the colour of the window
-	// and the depth buffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	switch (g_eCurrentScene)
 	{
@@ -243,9 +161,9 @@ void RenderScene2()
 	// Camera matrix
 
 	View = glm::lookAt(
-		glm::vec3(0, current_time/100, 40.f), // Camera is at (4,3,-3), in World Space
-		glm::vec3(0, 4, 0), // and looks at the origin
-		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+		glm::vec3(8.f, -2.f, 20.f), // Camera is at (4,3,-3), in World Space
+		glm::vec3(8.f, 8.f, 0.f), // and looks at the origin
+		glm::vec3(0.f, 1.f, 0.f)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
 	// Model matrix : an identity matrix (model will be at the origin)
 	Model = glm::mat4(1.0f);
@@ -300,11 +218,7 @@ void RenderScene2()
 	Model = glm::rotate(Model, 90.f, glm::vec3(0.f, 1.f, 0.f));
 	Model = glm::rotate(Model, 90.f, glm::vec3(0.f, 0.f, 1.f));
 	for (std::pair<float, float> out : red) {
-		View = glm::lookAt(
-			glm::vec3(0, current_time / 100, 40.f), // Camera is at (4,3,-3), in World Space
-			glm::vec3(0, 4, 0), // and looks at the origin
-			glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-		);
+		View = oldView;
 
 		View = glm::translate(View, glm::vec3(0.f, 2.f, 2.f));
 		View = glm::translate(View, glm::vec3(out.first * 2.f / 100 - 1.f,
@@ -345,11 +259,7 @@ void RenderScene2()
 
 	Model = glm::scale(glm::mat4(1.f), glm::vec3(0.7f, 0.7f, 1.f));
 	for (std::pair<float, float> out : white) {
-		View = glm::lookAt(
-			glm::vec3(0, current_time / 100, 40.f), // Camera is at (4,3,-3), in World Space
-			glm::vec3(0, 4, 0), // and looks at the origin
-			glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-		);
+		View = oldView;
 
 		View = glm::translate(View, glm::vec3(0.f, 2.f, 2.f));
 		View = glm::translate(View, glm::vec3(out.first * 2.f / 100 - 1.f,
@@ -383,6 +293,52 @@ void RenderScene2()
 
 		// Draw the triangles
 		glDrawArrays(GL_TRIANGLE_FAN, 0, 42); // 12*3 indices starting at 0 -> 12 triangles
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+	}
+
+	std::pair<float, float> active;
+	if (activeIndex < white.size()) {
+		active = white.at(activeIndex);
+	} else {
+		active = red.at(activeIndex - white.size());
+	}
+
+	{
+		View = oldView;
+
+		View = glm::translate(View, glm::vec3(0.f, 3.f, 4.f));
+		View = glm::translate(View, glm::vec3(active.first * 2.f / 100 - 1.f,
+			8.f - (active.second * 2.f / 100 - 1.f), 0.f));
+
+		MVP = Projection * View * Model;
+
+		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, arrowbuffer);
+		glVertexAttribPointer(
+			0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
+			3,                  // size
+			GL_FLOAT,           // type
+			GL_FALSE,           // normalized?
+			0,                  // stride
+			(void*)0            // array buffer offset
+		);
+
+		// 2nd attribute buffer : colors
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, arrowbuffer_color);
+		glVertexAttribPointer(
+			1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+			3,                                // size
+			GL_FLOAT,                         // type
+			GL_FALSE,                         // normalized?
+			0,                                // stride
+			(void*)0                          // array buffer offset
+		);
+
+		// Draw the triangles
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 	}
@@ -444,7 +400,7 @@ void RenderScene1()
 }
 
 
-void SetupGL() //
+void SetupGL()
 {
 	//Parameter handling
 	glShadeModel(GL_SMOOTH);
@@ -697,6 +653,18 @@ void SetupGL() //
 		1.f, 0.f, 0.f,
 	};
 
+	static const GLfloat g_vertex_buffer_data_arrow[] = {
+		0.f, -1.f, 0.f,
+		-0.5f, 1.f, 0.f,
+		0.5f, 1.f, 0.f,
+	};
+
+	static const GLfloat g_vertex_buffer_data_arrow_color[] = {
+		1.f, 0.f, 1.f,
+		1.f, 0.f, 1.f,
+		1.f, 0.f, 1.f,
+	};
+
 	// Set up the buffer data for the cube
 	glGenBuffers(1, &cubebuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, cubebuffer);
@@ -717,6 +685,16 @@ void SetupGL() //
 	glBindBuffer(GL_ARRAY_BUFFER, circlebuffer_color);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_circle_color),
 		g_vertex_buffer_data_circle_color, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &arrowbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, arrowbuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_arrow),
+		g_vertex_buffer_data_arrow, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &arrowbuffer_color);
+	glBindBuffer(GL_ARRAY_BUFFER, arrowbuffer_color);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_arrow_color),
+		g_vertex_buffer_data_arrow_color, GL_STATIC_DRAW);
 
 	// May as well just add the vertex data.
 	lex(ttl::file2str("../processing/checker11"), red);
