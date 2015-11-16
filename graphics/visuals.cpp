@@ -28,19 +28,12 @@ void lex(const std::string source,
 
 // This will be used with shader
 //GLuint VertexArrayID;
-GLuint vertexbuffer, colorbuffer, legbuffer, legcolorbuffer, hipcolorbuffer, cubebuffer, cubebuffercolor;
-GLuint objvertexbuffer; // for obj
-GLuint programID_1, programID_2;
+GLuint cubebuffer, cubebuffercolor, circlebuffer, circlebuffer_color;
+GLuint programID_1;
 std::vector<std::pair<float, float>> white, red;
-
 int last_time, current_time;
-
 GLuint MatrixID; // Handler Matrix for moving the cam
-glm::mat4 MVP; // FInal Homogeneous Matrix
-
-glm::mat4 MVP1,MVP2,MVP3,MVP4,MVP5, MODEL_EVERYTHING, MODEL_LEG_1, MODEL_LEG_2;
-glm::mat4 MVPi[10];
-glm::mat4 Projection,View,oldView,Model;
+glm::mat4 MVP, Projection, View, oldView, Model;
 
 // Variables for moving camera with mouse
 int mouse_x = 800/2;
@@ -128,23 +121,6 @@ void Idle()
 		glutPostRedisplay();
 		// std::cout << position.x << " " << position.y <<  " " << position.z << std::endl;
 	}
-	if (g_eCurrentScene == 5)
-	{
-		counter = counter + 0.002 * dt;
-		MODEL_EVERYTHING = glm::translate(MODEL_EVERYTHING, glm::vec3(0, 0, 0.0013 * counter));
-		MODEL_LEG_1 = glm::rotate(MODEL_LEG_1, float(cos(counter)), glm::vec3(1, 0, 0));
-		MODEL_LEG_2 = glm::rotate(MODEL_LEG_2, float(-cos(counter)), glm::vec3(1, 0, 0));
-	}
-	if (g_eCurrentScene == 6)
-	{
-		counter += 0.002 * dt;
-		constexpr const float CONSTANT_INC = 0.0013f;
-		View = glm::rotate(View, static_cast<float>(cos(counter)), glm::vec3(1, 0, 0));
-		View = glm::translate(View, glm::vec3(0, 0, -CONSTANT_INC * counter));
-		MODEL_EVERYTHING = glm::translate(MODEL_EVERYTHING, glm::vec3(0, 0, CONSTANT_INC * counter));
-		MODEL_LEG_1 = glm::rotate(MODEL_LEG_1, float(cos(counter)), glm::vec3(1, 0, 0));
-		MODEL_LEG_2 = glm::rotate(MODEL_LEG_2, float(-cos(counter)), glm::vec3(1, 0, 0));
-	}
 	last_time = current_time; // update when the last timer;
 }
 
@@ -196,35 +172,6 @@ void KeyboardGL( unsigned char c, int x, int y )
 		{
 			glClearColor( 0.4f, 0.4f, 0.4f, 1.0f );                      // Light-Gray background
 			g_eCurrentScene = 4;
-		}
-		break;
-		case '5':
-		{
-			glClearColor( 0.7f, 0.7f, 0.7f, 1.0f );                      // Light-Gray background
-			g_eCurrentScene = 5;
-			// THIS MODEL WILL BE APPLIED TO THE WHOLE SCENE 5
-			MODEL_EVERYTHING=glm::mat4(1.0f); // Identity
-			// THIS MODEL WILL BE APPLIED TO LEG 1
-			MODEL_LEG_1=glm::mat4(1.0f);
-			// THIS MODEL WILL BE APPLIED TO LEG 2
-			MODEL_LEG_2=glm::mat4(1.0f);
-		}
-		break;
-		case '6':
-		{
-			glClearColor( 0.7f, 0.7f, 0.7f, 1.0f );                      // Light-Gray background
-			g_eCurrentScene = 6;
-			View = glm::lookAt(
-				glm::vec3(5.63757, -0.7351, 0), // Camera is at (4,3,-3), in World Space
-				glm::vec3(0,0,0), // and looks at the origin
-				glm::vec3(0,1,0)  // Head is up (set to 0,-1,0 to look upside-down)
-			);
-			// THIS MODEL WILL BE APPLIED TO THE WHOLE SCENE 5
-			MODEL_EVERYTHING=glm::mat4(1.0f); // Identity
-			// THIS MODEL WILL BE APPLIED TO LEG 1
-			MODEL_LEG_1=glm::mat4(1.0f);
-			// THIS MODEL WILL BE APPLIED TO LEG 2
-			MODEL_LEG_2=glm::mat4(1.0f);
 		}
 		break;
 		case 's':
@@ -391,6 +338,51 @@ void RenderScene2()
 
 		// Draw the triangles
 		glDrawArrays(GL_TRIANGLES, 0, 6*2*3); // 12*3 indices starting at 0 -> 12 triangles
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+	}
+
+
+	Model = glm::scale(glm::mat4(1.f), glm::vec3(0.7f, 0.7f, 1.f));
+	for (std::pair<float, float> out : white) {
+		View = glm::lookAt(
+			glm::vec3(0, current_time / 100, 40.f), // Camera is at (4,3,-3), in World Space
+			glm::vec3(0, 4, 0), // and looks at the origin
+			glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+		);
+
+		View = glm::translate(View, glm::vec3(0.f, 2.f, 2.f));
+		View = glm::translate(View, glm::vec3(out.first * 2.f / 100 - 1.f,
+			8.f - (out.second * 2.f / 100 - 1.f), 0.f));
+
+		MVP = Projection * View * Model;
+
+		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, circlebuffer);
+		glVertexAttribPointer(
+			0,                  // attribute. No particular reason for 0, but must match the layout in the shader.
+			3,                  // size
+			GL_FLOAT,           // type
+			GL_FALSE,           // normalized?
+			0,                  // stride
+			(void*)0            // array buffer offset
+		);
+
+		// 2nd attribute buffer : colors
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, circlebuffer_color);
+		glVertexAttribPointer(
+			1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
+			3,                                // size
+			GL_FLOAT,                         // type
+			GL_FALSE,                         // normalized?
+			0,                                // stride
+			(void*)0                          // array buffer offset
+		);
+
+		// Draw the triangles
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 42); // 12*3 indices starting at 0 -> 12 triangles
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
 	}
@@ -615,6 +607,96 @@ void SetupGL() //
 		1.f, 0.f, 0.f,
 	};
 
+	static const GLfloat g_vertex_buffer_data_circle[] = {
+		0.f, 0.f, 1.f,
+		1.00000000000000f, 0.000000000000000f, 0.f,
+		0.987688340595138f, 0.156434465040231f, 0.f,
+		0.951056516295154f, 0.309016994374947f, 0.f,
+		0.891006524188368f, 0.453990499739547f, 0.f,
+		0.809016994374947f, 0.587785252292473f, 0.f,
+		0.707106781186548f, 0.707106781186548f, 0.f,
+		0.587785252292473f, 0.809016994374947f, 0.f,
+		0.453990499739547f, 0.891006524188368f, 0.f,
+		0.309016994374947f, 0.951056516295154f, 0.f,
+		0.156434465040231f, 0.987688340595138f, 0.f,
+		0.000000000000000f, 1.00000000000000f, 0.f,
+		-0.156434465040231f, 0.987688340595138f, 0.f,
+		-0.309016994374947f, 0.951056516295154f, 0.f,
+		-0.453990499739547f, 0.891006524188368f, 0.f,
+		-0.587785252292473f, 0.809016994374947f, 0.f,
+		-0.707106781186548f, 0.707106781186548f, 0.f,
+		-0.809016994374947f, 0.587785252292473f, 0.f,
+		-0.891006524188368f, 0.453990499739547f, 0.f,
+		-0.951056516295154f, 0.309016994374947f, 0.f,
+		-0.987688340595138f, 0.156434465040231f, 0.f,
+		-1.00000000000000f, 0.000000000000000f, 0.f,
+		-0.987688340595138f, -0.156434465040231f, 0.f,
+		-0.951056516295154f, -0.309016994374947f, 0.f,
+		-0.891006524188368f, -0.453990499739546f, 0.f,
+		-0.809016994374947f, -0.587785252292473f, 0.f,
+		-0.707106781186548f, -0.707106781186548f, 0.f,
+		-0.587785252292473f, -0.809016994374947f, 0.f,
+		-0.453990499739547f, -0.891006524188368f, 0.f,
+		-0.309016994374947f, -0.951056516295154f, 0.f,
+		-0.156434465040231f, -0.987688340595138f, 0.f,
+		0.000000000000000f, -1.00000000000000f, 0.f,
+		0.156434465040231f, -0.987688340595138f, 0.f,
+		0.309016994374947f, -0.951056516295154f, 0.f,
+		0.453990499739547f, -0.891006524188368f, 0.f,
+		0.587785252292473f, -0.809016994374947f, 0.f,
+		0.707106781186548f, -0.707106781186548f, 0.f,
+		0.809016994374947f, -0.587785252292473f, 0.f,
+		0.891006524188368f, -0.453990499739547f, 0.f,
+		0.951056516295154f, -0.309016994374947f, 0.f,
+		0.987688340595138f, -0.156434465040231f, 0.f,
+		1.f, 0.f, 0.f,
+	};
+
+	static const GLfloat g_vertex_buffer_data_circle_color[] = {
+		0.f, 0.f, 1.f,
+		1.00000000000000f, 0.000000000000000f, 0.f,
+		0.987688340595138f, 0.156434465040231f, 0.f,
+		0.951056516295154f, 0.309016994374947f, 0.f,
+		0.891006524188368f, 0.453990499739547f, 0.f,
+		0.809016994374947f, 0.587785252292473f, 0.f,
+		0.707106781186548f, 0.707106781186548f, 0.f,
+		0.587785252292473f, 0.809016994374947f, 0.f,
+		0.453990499739547f, 0.891006524188368f, 0.f,
+		0.309016994374947f, 0.951056516295154f, 0.f,
+		0.156434465040231f, 0.987688340595138f, 0.f,
+		0.000000000000000f, 1.00000000000000f, 0.f,
+		-0.156434465040231f, 0.987688340595138f, 0.f,
+		-0.309016994374947f, 0.951056516295154f, 0.f,
+		-0.453990499739547f, 0.891006524188368f, 0.f,
+		-0.587785252292473f, 0.809016994374947f, 0.f,
+		-0.707106781186548f, 0.707106781186548f, 0.f,
+		-0.809016994374947f, 0.587785252292473f, 0.f,
+		-0.891006524188368f, 0.453990499739547f, 0.f,
+		-0.951056516295154f, 0.309016994374947f, 0.f,
+		-0.987688340595138f, 0.156434465040231f, 0.f,
+		-1.00000000000000f, 0.000000000000000f, 0.f,
+		-0.987688340595138f, -0.156434465040231f, 0.f,
+		-0.951056516295154f, -0.309016994374947f, 0.f,
+		-0.891006524188368f, -0.453990499739546f, 0.f,
+		-0.809016994374947f, -0.587785252292473f, 0.f,
+		-0.707106781186548f, -0.707106781186548f, 0.f,
+		-0.587785252292473f, -0.809016994374947f, 0.f,
+		-0.453990499739547f, -0.891006524188368f, 0.f,
+		-0.309016994374947f, -0.951056516295154f, 0.f,
+		-0.156434465040231f, -0.987688340595138f, 0.f,
+		0.000000000000000f, -1.00000000000000f, 0.f,
+		0.156434465040231f, -0.987688340595138f, 0.f,
+		0.309016994374947f, -0.951056516295154f, 0.f,
+		0.453990499739547f, -0.891006524188368f, 0.f,
+		0.587785252292473f, -0.809016994374947f, 0.f,
+		0.707106781186548f, -0.707106781186548f, 0.f,
+		0.809016994374947f, -0.587785252292473f, 0.f,
+		0.891006524188368f, -0.453990499739547f, 0.f,
+		0.951056516295154f, -0.309016994374947f, 0.f,
+		0.987688340595138f, -0.156434465040231f, 0.f,
+		1.f, 0.f, 0.f,
+	};
+
 	// Set up the buffer data for the cube
 	glGenBuffers(1, &cubebuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, cubebuffer);
@@ -625,6 +707,16 @@ void SetupGL() //
 	glBindBuffer(GL_ARRAY_BUFFER, cubebuffercolor);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_cube_color),
 		g_vertex_buffer_data_cube_color, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &circlebuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, circlebuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_circle),
+		g_vertex_buffer_data_circle, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &circlebuffer_color);
+	glBindBuffer(GL_ARRAY_BUFFER, circlebuffer_color);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_circle_color),
+		g_vertex_buffer_data_circle_color, GL_STATIC_DRAW);
 
 	// May as well just add the vertex data.
 	lex(ttl::file2str("../processing/checker11"), red);
