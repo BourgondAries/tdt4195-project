@@ -349,17 +349,20 @@ void RenderScene2()
 		}
 	}
 
-	Model = glm::mat4(1.0f);
+	Model = glm::scale(glm::mat4(1.f), glm::vec3(0.7f, 0.7f, 1.f));
+	Model = glm::rotate(Model, 90.f, glm::vec3(0.f, 1.f, 0.f));
+	Model = glm::rotate(Model, 90.f, glm::vec3(0.f, 0.f, 1.f));
 	for (std::pair<float, float> out : red) {
 		View = glm::lookAt(
 			glm::vec3(0, current_time / 100, 40.f), // Camera is at (4,3,-3), in World Space
 			glm::vec3(0, 4, 0), // and looks at the origin
 			glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 		);
-		std::cout << out.first << ", " << out.second << std::endl;
+
 		View = glm::translate(View, glm::vec3(0.f, 2.f, 2.f));
 		View = glm::translate(View, glm::vec3(out.first * 2.f / 100 - 1.f,
 			8.f - (out.second * 2.f / 100 - 1.f), 0.f));
+
 		MVP = Projection * View * Model;
 
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
