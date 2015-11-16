@@ -25,7 +25,7 @@ namespace ttl {
 
 // This will be used with shader
 //GLuint VertexArrayID;
-GLuint vertexbuffer, colorbuffer, legbuffer, legcolorbuffer, hipcolorbuffer;
+GLuint vertexbuffer, colorbuffer, legbuffer, legcolorbuffer, hipcolorbuffer, cubebuffer, cubebuffercolor;
 GLuint objvertexbuffer; // for obj
 GLuint programID_1, programID_2;
 
@@ -61,14 +61,10 @@ glm::vec3 up = glm::vec3(0,1,0);
 void MouseGL(int button, int state, int x, int y)
 {
 	if (state == GLUT_DOWN) // if key is pressed
-	{
 		mouse_state=state;
 		// glutWarpPointer(800/2, 600/2);
-	}
 	else
-	{
 		mouse_state=GLUT_UP;
-	}
 }
 
 void Mouse_active(int x, int y)
@@ -766,6 +762,16 @@ void SetupGL() //
 		-1.f, 1.f, 0.f,
 	};
 
+	static const GLfloat g_vertex_buffer_data_cube_color[] = {
+		1.f, 0.f, 0.f,
+		1.f, 0.f, 0.f,
+		1.f, 0.f, 0.f,
+
+		0.f, 0.f, 1.f,
+		0.f, 0.f, 1.f,
+		0.f, 0.f, 1.f,
+	};
+
 	static const GLfloat g_vertex_buffer_data_leg[] = {
 		0.f, -1.f, 0.f,
 		0.f, 1.f, -1.f,
@@ -922,5 +928,16 @@ void SetupGL() //
 	glGenBuffers(1, &legcolorbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, legcolorbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_leg_color), g_vertex_buffer_data_leg_color, GL_STATIC_DRAW);
+
+
+	// Set up the buffer data for the cube
+	glGenBuffers(1, &cubebuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, cubebuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_cube), g_vertex_buffer_data_cube, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &cubebuffercolor);
+	glBindBuffer(GL_ARRAY_BUFFER, cubebuffercolor);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_cube_color), g_vertex_buffer_data_cube_color, GL_STATIC_DRAW);
+
 
 }
