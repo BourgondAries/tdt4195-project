@@ -78,7 +78,6 @@ void Specialkey(int c, int x, int y)
 void KeyboardGL(unsigned char c, int x, int y)
 {
 	unsigned char currentScene = g_eCurrentScene;
-	std::cout << c << std::endl;
 
 	std::pair<float, float> *active;
 	if (activeIndex < white.size()) {
@@ -86,13 +85,15 @@ void KeyboardGL(unsigned char c, int x, int y)
 	} else {
 		active = &red.at(activeIndex - white.size());
 	}
+	float speed = 3.4;
 
 	switch (c)
 	{
-		case 'h': active->first -= 1; break;
-		case 'j': active->second += 1; break;
-		case 'k': active->second -= 1; break;
-		case 'l': active->first += 1; break;
+
+		case 'h': active->first -= speed; break;
+		case 'j': active->second += speed; break;
+		case 'k': active->second -= speed; break;
+		case 'l': active->first += speed; break;
 		case '1':
 			glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );  // Black background
 			g_eCurrentScene = 1;
@@ -153,7 +154,7 @@ void DisplayGL()
 	glutSwapBuffers();
 }
 
-void RenderScene2()
+void RenderScene1()
 {
 	glEnable(GL_DEPTH_TEST);
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
@@ -345,7 +346,7 @@ void RenderScene2()
 }
 
 
-void RenderScene1()
+void RenderScene2()
 {    // Disable depth test
 	glEnable(GL_DEPTH_TEST);
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
