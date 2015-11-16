@@ -105,24 +105,16 @@ void Idle()
 		}
 		//            // Move forward
 		if (sp_key == GLUT_KEY_UP)
-		{
 			position += direction * (dt * cursor_speed);
-		}
 		// Move backward
 		if (sp_key == GLUT_KEY_DOWN)
-		{
 			position -= direction * (dt * cursor_speed);
-		}
 		// Strafe right
 		if (sp_key == GLUT_KEY_RIGHT)
-		{
 			position += right * (dt * cursor_speed);
-		}
 		// Strafe left
 		if (sp_key== GLUT_KEY_LEFT)
-		{
 			position -= right * (dt * cursor_speed);
-		}
 		sp_key =0;
 		// Camera matrix
 		if (g_eCurrentScene != 6)
@@ -237,28 +229,21 @@ void KeyboardGL( unsigned char c, int x, int y )
 		break;
 		case 's':
 		case 'S':
-		{
 			std::cout << "Shade Model: GL_SMOOTH" << std::endl;
 			// Switch to smooth shading model
 			glShadeModel( GL_SMOOTH );
-		}
 		break;
 		case 'f':
 		case 'F':
-		{
 			std::cout << "Shade Model: GL_FLAT" << std::endl;
 			// Switch to flat shading model
 			glShadeModel( GL_FLAT );
-		}
 		break;
 		case '\033': // escape quits
 		case '\015': // Enter quits
 		case 'Q':    // Q quits
 		case 'q':    // q (or escape) quits
-		{
-			// Cleanup up and quit
 			Cleanup(0);
-		}
 		break;
 
 		case '\72': //arrow up
@@ -268,11 +253,8 @@ void KeyboardGL( unsigned char c, int x, int y )
 		break;
 	}
 
-
-	if ( currentScene != g_eCurrentScene )
-	{
+	if (currentScene != g_eCurrentScene)
 			std::cout << "Changed Render Scene: " << int( g_eCurrentScene ) << std::endl;
-	}
 
 	glutPostRedisplay();
 }
@@ -280,16 +262,14 @@ void KeyboardGL( unsigned char c, int x, int y )
 
 void Cleanup( int errorCode, bool bExit )
 {
-	if ( g_iGLUTWindowHandle != 0 )
+	if (g_iGLUTWindowHandle != 0)
 	{
-		glutDestroyWindow( g_iGLUTWindowHandle );
+		glutDestroyWindow(g_iGLUTWindowHandle);
 		g_iGLUTWindowHandle = 0;
 	}
 
-	if ( bExit )
-	{
-		exit( errorCode );
-	}
+	if (bExit)
+		exit(errorCode);
 }
 
 
@@ -299,7 +279,7 @@ void DisplayGL()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Clean up the colour of the window
 	// and the depth buffer
 
-	switch ( g_eCurrentScene )
+	switch (g_eCurrentScene)
 	{
 		case 1: RenderScene1(); break;
 		case 2: RenderScene2(); break;
@@ -310,10 +290,6 @@ void DisplayGL()
 	}
 
 	glutSwapBuffers();
-	// All drawing commands applied to the
-	// hidden buffer, so now, bring forward
-	// the hidden buffer and hide the visible one
-
 }
 
 void RenderScene1()
@@ -779,6 +755,16 @@ void SetupGL() //
 	std::string fragment = ttl::file2str("ColorFragmentShader.fs");
 
 	programID_1 = LoadShaders(vertex.c_str(), fragment.c_str());
+
+	static const GLfloat g_vertex_buffer_data_cube[] = {
+		1.f, 0.f, 0.f,
+		-1.f, 1.f, 0.f,
+		-1.f, 0.f, 0.f,
+
+		1.f, 0.f, 0.f,
+		0.f, 1.f, 0.f,
+		-1.f, 1.f, 0.f,
+	};
 
 	static const GLfloat g_vertex_buffer_data_leg[] = {
 		0.f, -1.f, 0.f,
