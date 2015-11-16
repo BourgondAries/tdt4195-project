@@ -11,15 +11,17 @@
 #include "shader.hpp"
 
 
+// For easier loading of files. The string API is more friendly than the stream API.
 namespace ttl {
 	std::string file2str(const std::string &filename);
 }
 
+// The lexer used to decode the results from imageprocessing.
 void lex(const std::string source,
 	std::vector<std::pair<float, float>> &vector);
 
-GLuint cubebuffer, cubebuffercolor, circlebuffer, circlebuffer_color, arrowbuffer, arrowbuffer_color;
-GLuint programID_1;
+GLuint cubebuffer, cubebuffercolor, cubebuffercolor_checker, circlebuffer, circlebuffer_color, arrowbuffer, arrowbuffer_color;
+GLuint oglProgram;
 long activeIndex = 0;
 std::vector<std::pair<float, float>> white, red;
 int last_time, current_time;
@@ -32,33 +34,10 @@ int mouse_button =  GLUT_LEFT_BUTTON;
 int mouse_state = GLUT_UP;
 int sp_key = 0;
 
-float counter = 0;
-glm::vec3 position = glm::vec3(5.63757, 1.7351, -2.19067 );
-float horizontalAngle = -1.07947;
-float verticalAngle = -0.369055;
-float initialFoV = 45.0f;
-glm::vec3 direction = glm::vec3(0,0,0) - position;
-glm::vec3 right = glm::vec3(0,0,1) ;
-glm::vec3 up = glm::vec3(0,1,0);
-
-void MouseGL(int button, int state, int x, int y)
-{
-	if (state == GLUT_DOWN)
-		mouse_state = state;
-	else
-		mouse_state = GLUT_UP;
-}
-
-void Mouse_active(int x, int y)
-{
-	mouse_x = x;
-	mouse_y = y;
-}
 
 void Idle()
 {
 	current_time = glutGet(GLUT_ELAPSED_TIME);
-	int dt = current_time - last_time;
 	last_time = current_time;
 }
 
@@ -89,7 +68,6 @@ void KeyboardGL(unsigned char c, int x, int y)
 
 	switch (c)
 	{
-
 		case 'h': active->first -= speed; break;
 		case 'j': active->second += speed; break;
 		case 'k': active->second -= speed; break;
@@ -171,7 +149,7 @@ void RenderScene1()
 	// Our ModelViewProjection : multiplication of our 3 matrices
 	MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
 	// Use our shader
-	glUseProgram(programID_1);
+	glUseProgram(oglProgram);
 	// Send our transformation to the currently bound shader,
 	// in the "MVP" uniform
 	oldView = View;
@@ -217,7 +195,7 @@ void RenderScene1()
 
 	Model = glm::scale(glm::mat4(1.f), glm::vec3(0.7f, 0.7f, 1.f));
 	Model = glm::rotate(Model, 90.f, glm::vec3(0.f, 1.f, 0.f));
-	Model = glm::rotate(Model, 90.f, glm::vec3(0.f, 0.f, 1.f));
+	Model = glm::rotate(Model, 180.f, glm::vec3(0.f, 0.f, 1.f));
 	for (std::pair<float, float> out : red) {
 		View = oldView;
 
@@ -241,7 +219,7 @@ void RenderScene1()
 
 		// 2nd attribute buffer : colors
 		glEnableVertexAttribArray(1);
-		glBindBuffer(GL_ARRAY_BUFFER, cubebuffercolor);
+		glBindBuffer(GL_ARRAY_BUFFER, cubebuffercolor_checker);
 		glVertexAttribPointer(
 			1,                                // attribute. No particular reason for 1, but must match the layout in the shader.
 			3,                                // size
@@ -366,7 +344,7 @@ void RenderScene2()
 	// Our ModelViewProjection : multiplication of our 3 matrices
 	MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
 	// Use our shader
-	glUseProgram(programID_1);
+	glUseProgram(oglProgram);
 	// Send our transformation to the currently bound shader,
 	// in the "MVP" uniform
 	glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -427,8 +405,6 @@ void SetupGL()
 	glutKeyboardFunc(KeyboardGL);
 	glutSpecialFunc(Specialkey);
 	glutReshapeFunc(ReshapeGL);
-	glutMouseFunc(MouseGL);
-	glutMotionFunc(Mouse_active);
 
 	//Call to the drawing function
 	glutIdleFunc(Idle);
@@ -463,7 +439,7 @@ void SetupGL()
 	std::string vertex = ttl::file2str("TransformVertexShader.vs");
 	std::string fragment = ttl::file2str("ColorFragmentShader.fs");
 
-	programID_1 = LoadShaders(vertex.c_str(), fragment.c_str());
+	oglProgram = LoadShaders(vertex.c_str(), fragment.c_str());
 
 	static const GLfloat g_vertex_buffer_data_cube[] = {
 		// Front face
@@ -514,54 +490,104 @@ void SetupGL()
 		1.f, -1.f, -1.f,
 	};
 
-	static const GLfloat g_vertex_buffer_data_cube_color[] = {
+	static const GLfloat g_vertex_buffer_data_cube_color_checker[] = {
 		// Red side
-		1.f, 0.f, 0.f,
-		1.f, 0.f, 0.f,
-		1.f, 0.f, 0.f,
-		1.f, 0.f, 0.f,
-		1.f, 0.f, 0.f,
-		1.f, 0.f, 0.f,
+		54/255.f, 54/255.f, 54/255.f,
+		54/255.f, 54/255.f, 54/255.f,
+		54/255.f, 54/255.f, 54/255.f,
+		54/255.f, 54/255.f, 54/255.f,
+		54/255.f, 54/255.f, 54/255.f,
+		54/255.f, 54/255.f, 54/255.f,
+
+		// Purple side
+		138/255.f, 43/255.f, 226/255.f,
+		138/255.f, 43/255.f, 226/255.f,
+		138/255.f, 43/255.f, 226/255.f,
+		138/255.f, 43/255.f, 226/255.f,
+		138/255.f, 43/255.f, 226/255.f,
+		138/255.f, 43/255.f, 226/255.f,
+
+		// Orange side
+		238/255.f, 118/255.f, 36/255.f,
+		238/255.f, 118/255.f, 36/255.f,
+		238/255.f, 118/255.f, 36/255.f,
+		238/255.f, 118/255.f, 36/255.f,
+		238/255.f, 118/255.f, 36/255.f,
+		238/255.f, 118/255.f, 36/255.f,
 
 		// Blue side
-		0.f, 1.f, 0.f,
-		0.f, 1.f, 0.f,
-		0.f, 1.f, 0.f,
-		0.f, 1.f, 0.f,
-		0.f, 1.f, 0.f,
-		0.f, 1.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
 
 		// Blue side
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-
-		// Blue side
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-
-		// Blue side
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
-		0.f, 0.f, 1.f,
+		0.f, 100/255.f, 0.f,
+		0.f, 100/255.f, 0.f,
+		0.f, 100/255.f, 0.f,
+		0.f, 100/255.f, 0.f,
+		0.f, 100/255.f, 0.f,
+		0.f, 100/255.f, 0.f,
 
 		// Back (red) face
-		1.f, 0.f, 0.f,
-		1.f, 0.f, 0.f,
-		1.f, 0.f, 0.f,
-		1.f, 0.f, 0.f,
-		1.f, 0.f, 0.f,
-		1.f, 0.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+	};
+
+	static const GLfloat g_vertex_buffer_data_cube_color[] = {
+		// Red side
+		0.7f, 0.078f, 0.14f,
+		0.7f, 0.078f, 0.14f,
+		0.7f, 0.078f, 0.14f,
+		0.7f, 0.078f, 0.14f,
+		0.7f, 0.078f, 0.14f,
+		0.7f, 0.078f, 0.14f,
+
+		// Green side
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+		127/255.f, 186/255.f, 0.f,
+
+		// Blue side
+		0.f, 1.f, 1.f,
+		0.f, 1.f, 1.f,
+		0.f, 1.f, 1.f,
+		0.f, 1.f, 1.f,
+		0.f, 1.f, 1.f,
+		0.f, 1.f, 1.f,
+
+		// Blue side
+		0.184f, 0.34f, 0.55f,
+		0.184f, 0.34f, 0.55f,
+		0.184f, 0.34f, 0.55f,
+		0.184f, 0.34f, 0.55f,
+		0.184f, 0.34f, 0.55f,
+		0.184f, 0.34f, 0.55f,
+
+		// Blue side
+		0.184f, 0.34f, 0.75f,
+		0.184f, 0.34f, 0.75f,
+		0.184f, 0.34f, 0.75f,
+		0.184f, 0.34f, 0.75f,
+		0.184f, 0.34f, 0.75f,
+		0.184f, 0.34f, 0.75f,
+
+		// Back (red) face
+		0.7f, 0.078f, 0.14f,
+		0.7f, 0.078f, 0.14f,
+		0.7f, 0.078f, 0.14f,
+		0.7f, 0.078f, 0.14f,
+		0.7f, 0.078f, 0.14f,
+		0.7f, 0.078f, 0.14f,
 	};
 
 	static const GLfloat g_vertex_buffer_data_circle[] = {
@@ -676,6 +702,11 @@ void SetupGL()
 	glBindBuffer(GL_ARRAY_BUFFER, cubebuffercolor);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_cube_color),
 		g_vertex_buffer_data_cube_color, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &cubebuffercolor_checker);
+	glBindBuffer(GL_ARRAY_BUFFER, cubebuffercolor_checker);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data_cube_color_checker),
+		g_vertex_buffer_data_cube_color_checker, GL_STATIC_DRAW);
 
 	glGenBuffers(1, &circlebuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, circlebuffer);
