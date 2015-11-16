@@ -242,7 +242,7 @@ void RenderScene1()
 
 		View = glm::translate(View, glm::vec3(0.f, 2.f, 2.f));
 		View = glm::translate(View, glm::vec3(out.first * 2.f / 100 - 1.f,
-			8.f - (out.second * 2.f / 100 - 1.f), 0.f));
+			8.f - (out.second * 2.f / 100 - 0.5f), 0.f));
 
 		MVP = Projection * View * Model;
 
@@ -379,7 +379,7 @@ void RenderScene2()
 }
 
 
-void SetupGL()
+void SetupGL(int argc, char *argv[])
 {
 	//Parameter handling
 	glShadeModel(GL_SMOOTH);
@@ -729,6 +729,6 @@ void SetupGL()
 		g_vertex_buffer_data_arrow_color, GL_STATIC_DRAW);
 
 	// May as well just add the vertex data.
-	lex(ttl::file2str("../processing/checker11"), red);
-	lex(ttl::file2str("../processing/checker12"), white);
+	lex(ttl::file2str(std::string(argv[1]) + "1"), red);
+	lex(ttl::file2str(std::string(argv[1]) + "2"), white);
 }

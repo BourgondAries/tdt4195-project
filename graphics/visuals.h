@@ -14,7 +14,7 @@ void Cleanup( int exitCode, bool bExit = true );
 
 
 // SetupGL :  Set up the OpenGL state machine and create a light source
-void SetupGL();
+void SetupGL(int argc, char *argv[]);
 
 
 // DisplayGL :  The function responsible for drawing everything in the

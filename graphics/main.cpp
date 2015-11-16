@@ -1,3 +1,4 @@
+#include <iostream>
 #include "visuals.h"
 #include "glm/glm.hpp"
 #define GLEW_STATIC
@@ -14,6 +15,10 @@ unsigned char g_eCurrentScene = 1;
 //---------- Main program
 int main(int argc, char *argv[])
 {
+	if (argc != 2) {
+		std::cout << "This program requires a filename as argument.\n";
+		return 1;
+	}
 	glewExperimental = GL_TRUE;
 	glutInit(&argc, argv);
 
@@ -30,7 +35,7 @@ int main(int argc, char *argv[])
 
 	g_iGLUTWindowHandle = glutCreateWindow("OpenGL");
 
-	SetupGL();
+	SetupGL(argc, argv);
 
 	glutMainLoop();
 	return 0;
